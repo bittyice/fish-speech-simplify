@@ -1,0 +1,6 @@
+checkpoints
+dataset
+logs/
+__pycache__/
+temps/
+*.wav
