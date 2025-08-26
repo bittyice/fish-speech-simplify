@@ -17,7 +17,7 @@ from transformers import get_linear_schedule_with_warmup, get_cosine_schedule_wi
 acoustic_token_file = 'dataset/openaudio_ft.jsonl'
 
 # name2speakerid = {"派蒙": 1, "温迪": 2, "纳西妲": 3, "八重神子": 4, "阿贝多": 5, "枫原万叶": 6}
-name2speakerid = {"三月七": 0}
+name2speakerid = {"枫原万叶": 0}
 
 @dataclass
 class Data: 
@@ -160,12 +160,12 @@ def train():
             # [b, t, voc_size]
             token_logits: torch.Tensor = result.token_logits
             # [t', 10, cb_size]
-            codebook_logits: torch.Tensor = result.codebook_logits
+            acoustic_token_logits: torch.Tensor = result.acoustic_token_logits
 
             batch_size = token_logits.size(0)
-            cb_size = codebook_logits.size(2)
+            cb_size = acoustic_token_logits.size(2)
 
-            '''vq损失值'''
+            '''slow token损失值'''
             # 获取 vq 位置对应的输出
             _mask_end = tokens == tokenizer.im_end_id
             real_mask = vq_mask_tokens + _mask_end
@@ -175,21 +175,21 @@ def train():
 
             token_logits_predict = token_logits[_mask]
             token_real = tokens[real_mask]
-            vqloss = loss_fn(token_logits_predict, token_real)
+            token_loss = loss_fn(token_logits_predict, token_real)
             
             
-            '''codebook损失值'''
-            codebook_logits_predict = codebook_logits[:, 1:, :].reshape(-1, cb_size)
-            codebook_real = vq[:, 1:].reshape(-1)
+            '''acoustic token损失值'''
+            acoustic_token_logits_predict = acoustic_token_logits[:, 1:, :].reshape(-1, cb_size)
+            acoustic_token_real = vq[:, 1:].reshape(-1)
 
-            cbloss = loss_fn(codebook_logits_predict, codebook_real)
+            acoustic_token_loss = loss_fn(acoustic_token_logits_predict, acoustic_token_real)
             
 
             '''梯度下降'''
             vqloss_num = token_real.shape[0]
-            cbloss_num = codebook_real.shape[0]
+            cbloss_num = acoustic_token_real.shape[0]
             total = vqloss_num + cbloss_num
-            loss: torch.Tensor = vqloss * (vqloss_num / total) + cbloss * (cbloss_num / total)
+            loss: torch.Tensor = token_loss * (vqloss_num / total) + acoustic_token_loss * (cbloss_num / total)
 
             optimer.zero_grad()
             loss.backward()
@@ -204,7 +204,7 @@ def train():
                 # writer.log_loss(loss.item(), global_steps)
                 # 清理内存
                 del result.token_logits
-                del result.codebook_logits
+                del result.acoustic_token_logits
                 torch.cuda.empty_cache()
             
             if (curstep + 1) % 3000 == 0:

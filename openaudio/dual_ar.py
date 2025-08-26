@@ -156,7 +156,7 @@ class KVCache(nn.Module):
 @dataclass
 class TransformerForwardResult:
     token_logits: Tensor
-    codebook_logits: Tensor
+    acoustic_token_logits: Tensor
 
 
 class DualARTransformer(nn.Module):
@@ -350,10 +350,8 @@ class DualARTransformer(nn.Module):
 
         freqs_cis = self.freqs_cis[:seq_len]
 
-        # return freqs_cis, mask
-
         for layer in self.layers:
-            x = layer(x, freqs_cis)    
+            x = layer(x, freqs_cis)
 
         # We got slow_out here
         slow_out = self.norm(x)
@@ -387,14 +385,14 @@ class DualARTransformer(nn.Module):
         x = x[_mask]
 
         # [t', 9]
-        codebooks = vq[..., :-1]
+        acoustic_tokens = vq[..., :-1]
         # 将训练数据的 codebooks 转为 embeddings
         # [t', 9, dim]
-        codebook_embeddings = self.fast_embeddings(codebooks)
+        acoustic_tokens_embeddings = self.fast_embeddings(acoustic_tokens)
 
         # 拼接
         # [t', 10, dim]
-        x = torch.cat([x[:, None], codebook_embeddings], dim=1)
+        x = torch.cat([x[:, None], acoustic_tokens_embeddings], dim=1)
 
         # 通过 decoder 层
         for layer in self.fast_layers:
@@ -403,11 +401,11 @@ class DualARTransformer(nn.Module):
         # 线性映射
         fast_out = self.fast_norm(x)
         # [t', 10, cb_size]
-        codebook_logits = self.fast_output(fast_out)
+        acoustic_token_logits = self.fast_output(fast_out)
 
-        assert codebook_logits.shape[1] == self.config.num_codebooks
+        assert acoustic_token_logits.shape[1] == self.config.num_codebooks
 
-        return codebook_logits
+        return acoustic_token_logits
 
     def forward(
         self,
@@ -419,11 +417,11 @@ class DualARTransformer(nn.Module):
         vq_mask_tokens: Optional[Tensor] = None
     ) -> TransformerForwardResult:
         token_logits, hidden_states = self.forward_slow(tokens, vq, vq_mask_tokens)
-        codebook_logits = self.forward_fast(hidden_states, vq, vq_mask_tokens)
+        acoustic_token_logits = self.forward_fast(hidden_states, vq, vq_mask_tokens)
 
         return TransformerForwardResult(
             token_logits=token_logits,
-            codebook_logits=codebook_logits,
+            acoustic_token_logits=acoustic_token_logits,
         )
 
 

@@ -12,7 +12,7 @@ import soundfile as sf
 acoustic_token_file = 'dataset/openaudio_ft.jsonl'
 
 # 提前将语音进行编码，方便后续进行训练
-def encode_wav():
+def encode_wav_genshin():
     text_handler = Handler[str]()
     text_handler.add_middleware(ComminTextMiddleware())
 
@@ -174,6 +174,6 @@ def test():
 
 
 if __name__ == '__main__':
-    # encode_wav()
-    encode_wav_star_rail()
+    encode_wav_genshin()
+    # encode_wav_star_rail()
     # test()
