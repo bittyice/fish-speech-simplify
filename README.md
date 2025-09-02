@@ -1,4 +1,4 @@
-# Fish-Speech (Simplified)
+# Fish-Speech-Simplify
 
 This is a refactored and simplified version of the original fish-speech project. (non-author)
 
@@ -28,12 +28,12 @@ fish-speech-simplify/
 openaudio-s1-mini: https://huggingface.co/fishaudio/openaudio-s1-mini
 
 ## 🚀 Usage
-### Inference (Text-to-Speech)
+### Inference
 ```bash
 python index.py
 ```
 
-### Fine-tuning (if included)
+### Fine-tuning
 1. Collect Data
 ```bash
 python data_clean.py
