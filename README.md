@@ -17,12 +17,19 @@ pip install -r requirements.txt
 ```
 
 2. Put the openaudio-s1-mini model file in the checkpoints/openaudio-s1-mini dir.
+
 It looks like: 
+
 fish-speech-simplify/
+
 │── checkpoints/openaudio-s1-mini
+
 │── dataset/            # Data processing
+
 │── index.py            # Inference entry point
+
 │── requirements.txt    # Dependencies
+
 └── README.md
 
 openaudio-s1-mini: https://huggingface.co/fishaudio/openaudio-s1-mini
