@@ -19,7 +19,7 @@ from .utilities import find_multiple
 
 import loralib as lora
 
-from flash_attn import flash_attn_func
+# from flash_attn import flash_attn_func
 
 @dataclass
 class LoraConfig:
@@ -668,7 +668,14 @@ class Attention(nn.Module):
         k = k.repeat_interleave(self.n_head // self.n_local_heads, dim=2)
         v = v.repeat_interleave(self.n_head // self.n_local_heads, dim=2)
 
-        y = flash_attn_func(q, k, v, causal=causal)
+        # 这是 flash attention 的代码，和torch attention二选一
+        # y = flash_attn_func(q, k, v, causal=causal)
+        # 这是 torch attention 的代码，和flash attention二选一
+        q.transpose_(1, 2)
+        k.transpose_(1, 2)
+        v.transpose_(1, 2)
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=causal)
+        y.transpose_(1, 2)
 
         y = y.view(bsz, seqlen, q_size)
 
